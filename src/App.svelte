@@ -29,6 +29,23 @@
       device: device,
       format: canvasFormat
     });
+
+    const encoder = device.createCommandEncoder();
+
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [{
+        view: context.getCurrentTexture().createView(),
+        loadOp: "clear",
+        clearValue: { r: 0, g:0, b:0.4, a: 1 },
+        // clearValue: [0, 0, 0.4, 1], // equivalent
+        storeOp: "store",
+      }],
+    });
+
+    pass.end();
+
+    device.queue.submit([encoder.finish()]);
+
   });
 </script>
 

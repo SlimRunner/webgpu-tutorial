@@ -37,6 +37,23 @@
       -0.8, -0.8,
     ]);
     
+    const vertexBuffer = device.createBuffer({
+      label: "Cell Vertices",
+      size: vertices.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+
+    device.queue.writeBuffer(vertexBuffer, /*bufferOffset=*/0, vertices);
+
+    const vertexBufferLayout: GPUVertexBufferLayout = {
+      arrayStride: 8,
+      attributes: [{
+        format: "float32x2",
+        offset: 0,
+        shaderLocation: 0, // Position, see vertex shader
+      }]
+    };
+
     context.configure({
       device: device,
       format: canvasFormat

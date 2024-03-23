@@ -104,6 +104,10 @@
       }],
     });
 
+    pass.setPipeline(cellPipeline);
+    pass.setVertexBuffer(0, vertexBuffer);
+    pass.draw(vertices.length / 2);
+
     pass.end();
 
     device.queue.submit([encoder.finish()]);

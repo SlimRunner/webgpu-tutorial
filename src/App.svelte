@@ -54,6 +54,13 @@
       }]
     };
 
+    const cellShaderModule = device.createShaderModule({
+      label: "Cell Shader",
+      code: `
+        // shader code goes here
+      `
+    });
+
     context.configure({
       device: device,
       format: canvasFormat

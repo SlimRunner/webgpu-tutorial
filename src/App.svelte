@@ -70,6 +70,23 @@
       `
     });
 
+    const cellPipeline = device.createRenderPipeline({
+      label: "Cell pipeline",
+      layout: "auto",
+      vertex: {
+        module: cellShaderModule,
+        entryPoint: "vertexMain",
+        buffers: [vertexBufferLayout],
+      },
+      fragment: {
+        module: cellShaderModule,
+        entryPoint: "fragmentMain",
+        targets: [{
+          format: canvasFormat,
+        }],
+      },
+    });
+
     context.configure({
       device: device,
       format: canvasFormat

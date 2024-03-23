@@ -25,6 +25,15 @@
       throw new Error("Context failed to be initialized");
     }
 
+    // naive triangle
+    const vertices = new Float32Array([
+    //   X,    Y,
+      -0.8, -0.8,
+       0.8, -0.8,
+       0.8,  0.8,
+      -0.8,  0.8,
+    ]);
+    
     context.configure({
       device: device,
       format: canvasFormat
@@ -36,7 +45,7 @@
       colorAttachments: [{
         view: context.getCurrentTexture().createView(),
         loadOp: "clear",
-        clearValue: { r: 0, g:0, b:0.4, a: 1 },
+        clearValue: { r: 0, g:0, b:0.4, a: 0.8 },
         // clearValue: [0, 0, 0.4, 1], // equivalent
         storeOp: "store",
       }],

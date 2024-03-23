@@ -28,10 +28,13 @@
     // naive triangle
     const vertices = new Float32Array([
     //   X,    Y,
-      -0.8, -0.8,
+      -0.8, -0.8, // triangle 1 (Blue)
        0.8, -0.8,
        0.8,  0.8,
+
+       0.8,  0.8, // triangle 2 (Red)
       -0.8,  0.8,
+      -0.8, -0.8,
     ]);
     
     context.configure({

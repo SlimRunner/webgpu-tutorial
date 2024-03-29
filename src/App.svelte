@@ -37,15 +37,26 @@
     // Create an array representing th active state of each cell
     const cellStateArray = new Uint32Array(GRID_SIZE * GRID_SIZE);
     // Create a storage buffer to hold the cell state.
-    const cellStateStorage = device.createBuffer({
-      label: "Cell State",
-      size: cellStateArray.byteLength,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-    });
+    const cellStateStorage = [
+      device.createBuffer({
+        label: "Cell State A",
+        size: cellStateArray.byteLength,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      }),
+      device.createBuffer({
+        label: "Cell State B",
+        size: cellStateArray.byteLength,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      }),
+    ];
     for (let i = 0; i < cellStateArray.length; i += 3) {
       cellStateArray[i] = 1;
     }
-    device.queue.writeBuffer(cellStateStorage, 0, cellStateArray);
+    device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
+    for (let i = 0; i < cellStateArray.length; ++i) {
+      cellStateArray[i] = i % 2;
+    }
+    device.queue.writeBuffer(cellStateStorage[1], 0, cellStateArray);
 
     // naive triangle
     const vertices = new Float32Array([
@@ -132,47 +143,65 @@
       },
     });
 
-    const bindGroup = device.createBindGroup({
-      label: "Cell renderer bind group",
-      layout: cellPipeline.getBindGroupLayout(0),
-      entries: [{
-        binding: 0,
-        resource: { buffer: uniformBuffer }
-      },
-      {
-        binding: 1,
-        resource: { buffer: cellStateStorage }
-      }],
-    });
+    const bindGroup = [
+      device.createBindGroup({
+        label: "Cell renderer bind group A",
+        layout: cellPipeline.getBindGroupLayout(0),
+        entries: [{
+          binding: 0,
+          resource: { buffer: uniformBuffer }
+        },
+        {
+          binding: 1,
+          resource: { buffer: cellStateStorage[0] }
+        }],
+      }),
+      device.createBindGroup({
+        label: "Cell renderer bind group B",
+        layout: cellPipeline.getBindGroupLayout(0),
+        entries: [{
+          binding: 0,
+          resource: { buffer: uniformBuffer }
+        },
+        {
+          binding: 1,
+          resource: { buffer: cellStateStorage[1] }
+        }],
+      }),
+    ];
 
     context.configure({
       device: device,
       format: canvasFormat
     });
+    
+    const UPDATE_INTERVAL = 200;
+    let step = 0;
 
-    const encoder = device.createCommandEncoder();
+    setInterval(() => updateGrid(context), UPDATE_INTERVAL);
+    
+    function updateGrid(context: GPUCanvasContext) {
+      ++step;
 
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [{
-        view: context.getCurrentTexture().createView(),
-        loadOp: "clear",
-        clearValue: { r: 0, g:0, b:0.4, a: 0.8 },
-        // clearValue: [0, 0, 0.4, 1], // equivalent
-        storeOp: "store",
-      }],
-    });
-
-    pass.setPipeline(cellPipeline);
-    pass.setVertexBuffer(0, vertexBuffer);
-
-    pass.setBindGroup(0, bindGroup);
-
-    pass.draw(vertices.length / 2, GRID_SIZE * GRID_SIZE);
-
-    pass.end();
-
-    device.queue.submit([encoder.finish()]);
-
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [{
+          view: context.getCurrentTexture().createView(),
+          loadOp: "clear",
+          clearValue: { r: 0, g:0, b:0.4, a: 0.8 },
+          // clearValue: [0, 0, 0.4, 1], // equivalent
+          storeOp: "store",
+        }],
+      });
+    
+      pass.setPipeline(cellPipeline);
+      pass.setBindGroup(0, bindGroup[step % 2]);
+      pass.setVertexBuffer(0, vertexBuffer);
+      pass.draw(vertices.length / 2, GRID_SIZE * GRID_SIZE);
+    
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+    }
   });
 </script>
 

@@ -80,10 +80,10 @@ function runGameOfLife(wgpu: WebGPUPayload) {
   const vertices = new Float32Array([
   //   X,    Y,
     -0.8, -0.8, // triangle 1 (Blue)
-      0.8, -0.8,
-      0.8,  0.8,
+     0.8, -0.8,
+     0.8,  0.8,
 
-      0.8,  0.8, // triangle 2 (Red)
+     0.8,  0.8, // triangle 2 (Red)
     -0.8,  0.8,
     -0.8, -0.8,
   ]);
@@ -118,52 +118,65 @@ function runGameOfLife(wgpu: WebGPUPayload) {
   });
 
   const bindGroupLayout = device.createBindGroupLayout({
-    entries: [{
-      binding: 0,
-      visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
-      buffer: { type: "uniform" } // when empty uniform is default
-    }, {
-      binding: 1,
-      visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
-      buffer: { type: "read-only-storage" }
-    }, {
-      binding: 2,
-      visibility: GPUShaderStage.COMPUTE,
-      buffer: { type: "storage" },
-      // other option keys: texture and sampler
-    }]
+    entries: [
+      {
+        binding: 0,
+        visibility:
+          GPUShaderStage.FRAGMENT |
+          GPUShaderStage.VERTEX |
+          GPUShaderStage.COMPUTE,
+        buffer: { type: "uniform" }, // when empty uniform is default
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.VERTEX | GPUShaderStage.COMPUTE,
+        buffer: { type: "read-only-storage" },
+      },
+      {
+        binding: 2,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: { type: "storage" },
+        // other option keys: texture and sampler
+      },
+    ],
   });
 
   const bindGroups = [
     device.createBindGroup({
       label: "Cell renderer bind group A",
       layout: bindGroupLayout,
-      entries: [{
-        binding: 0,
-        resource: { buffer: uniformBuffer }
-      },
-      {
-        binding: 1,
-        resource: { buffer: cellStateStorage[0] }
-      }, {
-        binding: 2,
-        resource: { buffer: cellStateStorage[1] }
-      }],
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: uniformBuffer },
+        },
+        {
+          binding: 1,
+          resource: { buffer: cellStateStorage[0] },
+        },
+        {
+          binding: 2,
+          resource: { buffer: cellStateStorage[1] },
+        },
+      ],
     }),
     device.createBindGroup({
       label: "Cell renderer bind group B",
       layout: bindGroupLayout,
-      entries: [{
-        binding: 0,
-        resource: { buffer: uniformBuffer }
-      },
-      {
-        binding: 1,
-        resource: { buffer: cellStateStorage[1] }
-      }, {
-        binding: 2,
-        resource: { buffer: cellStateStorage[0] }
-      }],
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: uniformBuffer },
+        },
+        {
+          binding: 1,
+          resource: { buffer: cellStateStorage[1] },
+        },
+        {
+          binding: 2,
+          resource: { buffer: cellStateStorage[0] },
+        },
+      ],
     }),
   ];
 

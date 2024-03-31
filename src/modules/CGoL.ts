@@ -1,4 +1,6 @@
 import { GameLoop } from "./GameLoop";
+import CgolComp from "../shaders/CgolComp.wgsl?raw";
+import CellShader from "../shaders/CellShader.wgsl?raw";
 
 interface WebGPUPayload {
   canvas: HTMLCanvasElement,
@@ -75,7 +77,6 @@ function runGameOfLife(wgpu: WebGPUPayload) {
   device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
   device.queue.writeBuffer(cellStateStorage[1], 0, cellStateArray);
 
-  // naive triangle
   const vertices = new Float32Array([
   //   X,    Y,
     -0.8, -0.8, // triangle 1 (Blue)
@@ -106,91 +107,14 @@ function runGameOfLife(wgpu: WebGPUPayload) {
 
   const cellShaderModule = device.createShaderModule({
     label: "Cell Shader",
-    code: `
-      struct VertexInput {
-        @location(0) pos: vec2f,
-        @builtin(instance_index) instance: u32,
-      };
-
-      struct VertexOutput {
-        @builtin(position) pos: vec4f,
-        @location(0) cell: vec2f,
-      }
-
-      @group(0) @binding(0) var<uniform> grid: vec2f;
-      @group(0) @binding(1) var<storage> cellState: array<u32>;
-
-      @vertex
-      fn vertexMain(input: VertexInput) -> VertexOutput {
-        let i = f32(input.instance);
-        let cell = vec2f(i % grid.x, floor(i / grid.x));
-        let state = f32(cellState[input.instance]);
-
-        let cellOffset = cell / grid * 2;
-        let gridPos = (input.pos * state + 1) / grid - 1 + cellOffset;
-
-        var output: VertexOutput;
-        output.pos = vec4f(gridPos, 0, 1);
-        output.cell = cell;
-        return output;
-      }
-
-      @fragment
-      fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
-        let c: vec2f = input.cell / grid;
-        return vec4f(c, 1 - c.x, 1); // (Red, Green, Blue, Alpha)
-      }
-    `
+    code: CellShader
   });
 
   const WORKGROUP_SIZE = 8;
 
   const simulationShaderModule = device.createShaderModule({
     label: "Game of Life simulation shader",
-    code: `
-      struct ComputeInput {
-        @builtin(global_invocation_id) cell: vec3u,
-      }
-
-      @group(0) @binding(0) var<uniform> grid: vec2f;
-
-      @group(0) @binding(1) var<storage> cellStateIn: array<u32>;
-      @group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
-
-      fn cellIndex(cell: vec2u) -> u32 {
-        return (cell.y % u32(grid.y)) * u32(grid.x) +
-                (cell.x % u32(grid.x));
-      }
-
-      fn cellActive(x: u32, y: u32) -> u32 {
-        return cellStateIn[cellIndex(vec2(x, y))];
-      }
-
-      @compute @workgroup_size(${WORKGROUP_SIZE}, ${WORKGROUP_SIZE})
-      fn computeMain(in: ComputeInput) {
-        let activeNeighbors = cellActive(in.cell.x + 1, in.cell.y + 1) +
-                              cellActive(in.cell.x + 1, in.cell.y    ) +
-                              cellActive(in.cell.x + 1, in.cell.y - 1) +
-                              cellActive(in.cell.x    , in.cell.y - 1) +
-                              cellActive(in.cell.x - 1, in.cell.y - 1) +
-                              cellActive(in.cell.x - 1, in.cell.y    ) +
-                              cellActive(in.cell.x - 1, in.cell.y + 1) +
-                              cellActive(in.cell.x    , in.cell.y + 1);
-        let i = cellIndex(in.cell.xy);
-
-        switch activeNeighbors {
-          case 2: {
-            cellStateOut[i] = cellStateIn[i];
-          }
-          case 3: {
-            cellStateOut[i] = 1;
-          }
-          default: {
-            cellStateOut[i] = 0;
-          }
-        }
-      }
-    `
+    code: CgolComp.replaceAll("WORKGROUP_SIZE", WORKGROUP_SIZE.toString())
   });
 
   const bindGroupLayout = device.createBindGroupLayout({

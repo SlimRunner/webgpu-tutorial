@@ -49,13 +49,13 @@
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       }),
     ];
+
+    // set an initial state buffer
     for (let i = 0; i < cellStateArray.length; i += 3) {
       cellStateArray[i] = 1;
     }
+
     device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
-    for (let i = 0; i < cellStateArray.length; ++i) {
-      cellStateArray[i] = i % 2;
-    }
     device.queue.writeBuffer(cellStateStorage[1], 0, cellStateArray);
 
     // naive triangle
@@ -173,36 +173,6 @@
       }]
     });
 
-    const pipelineLayout = device.createPipelineLayout({
-      label: "Cell Pipeline Layout",
-      bindGroupLayouts: [ bindGroupLayout ],
-    });
-
-    const cellPipeline = device.createRenderPipeline({
-      label: "Cell pipeline",
-      layout: pipelineLayout,
-      vertex: {
-        module: cellShaderModule,
-        entryPoint: "vertexMain",
-        buffers: [vertexBufferLayout],
-      },
-      fragment: {
-        module: cellShaderModule,
-        entryPoint: "fragmentMain",
-        targets: [{
-          format: canvasFormat,
-        }],
-      },
-    });
-    const simulationPipeline = device.createComputePipeline({
-      label: "Simulation pipeline",
-      layout: pipelineLayout,
-      compute: {
-        module: simulationShaderModule,
-        entryPoint: "computeMain",
-      }
-    });
-
     const bindGroups = [
       device.createBindGroup({
         label: "Cell renderer bind group A",
@@ -235,6 +205,36 @@
         }],
       }),
     ];
+
+    const pipelineLayout = device.createPipelineLayout({
+      label: "Cell Pipeline Layout",
+      bindGroupLayouts: [ bindGroupLayout ],
+    });
+
+    const cellPipeline = device.createRenderPipeline({
+      label: "Cell pipeline",
+      layout: pipelineLayout,
+      vertex: {
+        module: cellShaderModule,
+        entryPoint: "vertexMain",
+        buffers: [vertexBufferLayout],
+      },
+      fragment: {
+        module: cellShaderModule,
+        entryPoint: "fragmentMain",
+        targets: [{
+          format: canvasFormat,
+        }],
+      },
+    });
+    const simulationPipeline = device.createComputePipeline({
+      label: "Simulation pipeline",
+      layout: pipelineLayout,
+      compute: {
+        module: simulationShaderModule,
+        entryPoint: "computeMain",
+      }
+    });
 
     context.configure({
       device: device,

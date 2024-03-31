@@ -50,9 +50,9 @@
       }),
     ];
 
-    // set an initial state buffer
-    for (let i = 0; i < cellStateArray.length; i += 3) {
-      cellStateArray[i] = 1;
+    // set an initial state into buffer
+    for (let i = 0; i < cellStateArray.length; ++i) {
+      cellStateArray[i] = Math.random() > 0.6 ? 1 : 0;
     }
 
     device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
@@ -141,16 +141,36 @@
         @group(0) @binding(2) var<storage, read_write> cellStateOut: array<u32>;
 
         fn cellIndex(cell: vec2u) -> u32 {
-          return cell.y * u32(grid.x) + cell.x;
+          return (cell.y % u32(grid.y)) * u32(grid.x) +
+                 (cell.x % u32(grid.x));
+        }
+
+        fn cellActive(x: u32, y: u32) -> u32 {
+          return cellStateIn[cellIndex(vec2(x, y))];
         }
 
         @compute @workgroup_size(${WORKGROUP_SIZE}, ${WORKGROUP_SIZE})
         fn computeMain(in: ComputeInput) {
+          let activeNeighbors = cellActive(in.cell.x + 1, in.cell.y + 1) +
+                                cellActive(in.cell.x + 1, in.cell.y    ) +
+                                cellActive(in.cell.x + 1, in.cell.y - 1) +
+                                cellActive(in.cell.x    , in.cell.y - 1) +
+                                cellActive(in.cell.x - 1, in.cell.y - 1) +
+                                cellActive(in.cell.x - 1, in.cell.y    ) +
+                                cellActive(in.cell.x - 1, in.cell.y + 1) +
+                                cellActive(in.cell.x    , in.cell.y + 1);
           let i = cellIndex(in.cell.xy);
-          if (cellStateIn[i] == 0) {
-            cellStateOut[i] = 1;
-          } else {
-            cellStateOut[i] = 0;
+
+          switch activeNeighbors {
+            case 2: {
+              cellStateOut[i] = cellStateIn[i];
+            }
+            case 3: {
+              cellStateOut[i] = 1;
+            }
+            default: {
+              cellStateOut[i] = 0;
+            }
           }
         }
       `
@@ -241,7 +261,7 @@
       format: canvasFormat
     });
     
-    const UPDATE_INTERVAL = 200;
+    const UPDATE_INTERVAL = 40;
     const FPS = 1000 / UPDATE_INTERVAL;
     let step = 0;
 
